@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  IMAGE_NAME: stayease-auth-service
+  GCP_PROJECT_ID: dineth-773d8
+  GCP_REGION: asia-south1
+  CLOUD_RUN_SERVICE: auth-service
+
 jobs:
   ci:
     name: Build and Check
@@ -26,8 +32,8 @@ jobs:
       - name: Run tests
         run: npm test
 
-  docker:
-    name: Build and Push Image
+  docker-ghcr:
+    name: Build and Push Image to GHCR
     needs: ci
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -63,20 +69,47 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  deploy-aca:
-    name: Deploy to Azure Container Apps
-    needs: docker
-    if: github.ref == 'refs/heads/main' && vars.ACA_APP_NAME != '' && vars.ACA_RESOURCE_GROUP != '' && vars.ACR_LOGIN_SERVER != ''
+  deploy-gcp:
+    name: Push to Artifact Registry and Deploy to Cloud Run
+    needs: ci
+    if: github.ref == 'refs/heads/main' && vars.GAR_REPOSITORY != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GAR_HOST: asia-south1-docker.pkg.dev
+      GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
     steps:
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Deploy latest image to ACA
-        uses: azure/container-apps-deploy-action@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
         with:
-          containerAppName: ${{ vars.ACA_APP_NAME }}
-          resourceGroup: ${{ vars.ACA_RESOURCE_GROUP }}
-          imageToDeploy: ${{ vars.ACR_LOGIN_SERVER }}/stayease-auth-service:latest
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GAR_HOST }} --quiet
+
+      - name: Build and push image to Artifact Registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.GAR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.GAR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: auth-service
+          region: asia-south1
+          image: ${{ env.GAR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Show deployed URL
+        run: echo "${{ steps.deploy.outputs.url }}"

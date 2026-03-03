@@ -71,9 +71,56 @@ GitHub Actions workflows:
 	- Install dependencies
 	- Run checks/tests
 	- Build and push Docker image to GHCR on `main`
-	- Optional Azure Container Apps deploy when required variables/secrets are configured
+	- Build and push Docker image to Google Artifact Registry on `main`
+	- Deploy latest image to Google Cloud Run when required variables/secrets are configured
 - DevSecOps SAST pipeline: [.github/workflows/codeql.yml](.github/workflows/codeql.yml)
 	- Managed static security analysis with CodeQL
+
+### GitHub to Google Cloud setup
+
+Add this repository secret in GitHub Actions:
+
+```text
+GCP_CREDENTIALS
+```
+
+Create it from a Google Cloud service account key JSON.
+
+```json
+{
+  "type": "service_account",
+  "project_id": "dineth-773d8",
+  "private_key_id": "<key-id>",
+  "private_key": "<private-key>",
+  "client_email": "<service-account-email>",
+  "client_id": "<client-id>"
+}
+```
+
+Add this GitHub repository variable:
+
+```text
+GAR_REPOSITORY=<your-artifact-registry-repository>
+```
+
+Deployment flow on `main`:
+- `ci` runs `npm ci` and `npm test`
+- `docker-ghcr` publishes `ghcr.io/stayease-sliit-2026/stayease-auth-service`
+- `deploy-gcp` publishes `asia-south1-docker.pkg.dev/dineth-773d8/<GAR_REPOSITORY>/stayease-auth-service`
+- `deploy-gcp` updates the Cloud Run service `auth-service` in `asia-south1`
+
+Configured Google Cloud target values:
+- `GCP_PROJECT_ID=dineth-773d8`
+- `GCP_REGION=asia-south1`
+- `CLOUD_RUN_SERVICE=auth-service`
+
+Useful commands to inspect the live Google Cloud setup:
+
+```bash
+gcloud config get-value project
+gcloud artifacts repositories list --location=asia-south1 --format="table(name,location,format)"
+gcloud run services list --region=asia-south1 --format="table(name,region,url)"
+```
 
 ## 6) Security Measures
 
