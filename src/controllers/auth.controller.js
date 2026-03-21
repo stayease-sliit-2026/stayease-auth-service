@@ -1,3 +1,10 @@
+export const checkRole = (req, res) => {
+  // req.user is set by authenticate middleware
+  if (!req.user || !req.user.role) {
+    return res.status(400).json({ message: "Role not found in token" });
+  }
+  res.json({ role: req.user.role });
+};
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";

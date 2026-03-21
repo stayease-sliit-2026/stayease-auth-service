@@ -206,6 +206,27 @@ paths:
                     example: Logged out
         '401':
           description: Unauthorized
+  /auth/role:
+    get:
+      summary: Check user role from token
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Role found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  role:
+                    type: string
+                    example: user
+        '400':
+          description: Role not found in token
+        '401':
+          description: Unauthorized
 components:
   securitySchemes:
     bearerAuth:
