@@ -34,7 +34,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, email, password]
+              required: [name, email, password, mobile]
               properties:
                 name:
                   type: string
@@ -48,6 +48,9 @@ paths:
                   format: password
                   minLength: 8
                   example: StrongPass123
+                mobile:
+                  type: string
+                  example: "0771234567"
       responses:
         '201':
           description: Registration successful
@@ -131,6 +134,78 @@ paths:
                   valid:
                     type: boolean
                     example: false
+  /auth/profile:
+    get:
+      summary: Get current user profile
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update user profile
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Profile updated
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+  /auth/logout:
+    post:
+      summary: Logout and invalidate token
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out
+        '401':
+          description: Unauthorized
 components:
   securitySchemes:
     bearerAuth:
