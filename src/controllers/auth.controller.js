@@ -82,7 +82,6 @@ export const login = async (req, res) => {
 
 
 export const verifyToken = (req, res) => {
-  console.log("Verifying token...req.headers.authorization:", req.headers.authorization);
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ valid: false });
   try {

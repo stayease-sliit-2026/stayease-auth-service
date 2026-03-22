@@ -8,6 +8,6 @@ RUN npm ci --omit=dev
 COPY src ./src
 COPY openapi.yaml ./openapi.yaml
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["npm", "start"]

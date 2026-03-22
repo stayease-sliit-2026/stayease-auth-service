@@ -55,7 +55,7 @@ app.use((req, res) => {
 
 const startServer = async () => {
   try {
-    const port = Number(process.env.PORT) || 8080;
+    const port = Number(process.env.PORT) || 3000;
 
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET is missing in environment variables");

@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  auth-service:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb+srv://tharinduherath2426_db_user:Test1234@cluster0.1mxmtlb.mongodb.net/stayease_auth?retryWrites=true&w=majority
+      - JWT_SECRET=supersecretkey
+    restart: unless-stopped
